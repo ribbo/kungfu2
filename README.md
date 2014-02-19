@@ -17,7 +17,7 @@ DEPENDENCIES
 
 - <a href="https://github.com/rwaldron/johnny-five">johnny-five</a>
 
-SETUP
+BUILD
 -----
 Coming soon
 
