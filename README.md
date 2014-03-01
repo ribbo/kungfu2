@@ -26,6 +26,6 @@ SETUP
 1. Clone the repo
 2. In your console, navigate to the kungfu2 folder
 3. Install platforms and dependencies
-4. Run the command `node server.js` to initialize the node server
-4. Open another console window (or tab) navigate to the kungfu2 folder and run the command `node controller.js` to initialize the web server.
+4. Run the command `node radar-server.js` to initialize the node server
+4. Open another console window (or tab) navigate to the kungfu2 folder and run the command `node web-server.js` to initialize the web server.
 5. In your browser, go to http://localhost:9966 - Have fun!
