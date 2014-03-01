@@ -1,72 +1,53 @@
 # Open a socket to the node server
-socket = io.connect('http://localhost:8888')
+socket = io.connect 'http://localhost:8888'
 
 # On document ready
 $ ->
 
-    redState = false
-    yellowState = false
-    greenState = false
 
-    # LED toggle function
-    led =
-        red: () ->
-            # emit LED color and state to node server
-            socket.emit 'toggle',
-                'color': 'red'
-                'state': redState
-            if redState then redState = false else redState = true
+
+    # Servo function
+    servo =
+        sweep: (state = stop) ->
+            socket.emit 'sweep',
+                'state': state
             return
-        yellow: () ->
-            # emit LED color and state to node server
-            socket.emit 'toggle',
-                'color': 'yellow'
-                'state': yellowState
-            if yellowState then yellowState = false else yellowState = true
+        pan: (direction = right) ->
+            socket.emit 'pan',
+                'direction': direction
             return
-        green: () ->
-            # emit LED color and state to node server
-            socket.emit 'toggle',
-                'color': 'green'
-                'state': greenState
-            if greenState then greenState = false else greenState = true
+        position: (position = 0) ->
+            socket.emit 'position',
+                'position': position
             return
 
-    # Swicth LED's off after 1 second of page load/refresh
-    switchOff = setTimeout () ->
-        led.red()
-        led.yellow()
-        led.green()
-    , 1000
-
-    $('body').on 'change', '#pot', () ->
-
-        if this.checked
-            socket.emit('pot', true)
-        else
-            socket.emit('pot', false)
-
-    socket.on 'potentiometer', (data) ->
-        if data > 0 and data < 341
-            led.green()
-        else if data > 341 and data < 511
-            led.yellow()
-        else if data > 511
-            led.red()
 
 
-    # Toggle red LED on/off
-    $('body').on 'click', '#red', ->
-        # LED toggle function
-        led.red()
+    # Do stuff with the radar response object
+    socket.on 'radar', (obj) ->
+        console.log obj
 
-    # Toggle yellow LED on/off
-    $('body').on 'click', '#yellow', ->
-        # LED toggle function
-        led.yellow()
 
-    # Toggle green LED on/off
-    $('body').on 'click', '#green', ->
-        # LED toggle function
-        led.green()
+
+    # Start radar sweep
+    $('body').on 'click', '.start', ->
+        servo.sweep 'start'
+        $('.start, .left, .right, .reset').attr 'disabled', 'disabled'
+
+    # Stop radar sweep
+    $('body').on 'click', '.stop', ->
+        servo.sweep 'stop'
+        $('.start, .left, .right, .reset').removeAttr 'disabled'
+
+    # Pan radar left
+    $('body').on 'click', '.left', ->
+        servo.pan 'left'
+
+    # Pan radar right
+    $('body').on 'click', '.right', ->
+        servo.pan 'right'
+
+    # Reset radar position
+    $('body').on 'click', '.reset', ->
+        servo.position 0
 
