@@ -51,3 +51,13 @@ $ ->
     $('body').on 'click', '.reset', ->
         servo.position 0
 
+    $('.proximity').change () ->
+        if $(this).is ':checked'
+            socket.emit 'ir', true
+            $('.start, .stop, .left, .right, .reset').attr 'disabled', 'disabled'
+        else
+            socket.emit 'ir', false
+            $('.start, .stop, .left, .right, .reset').removeAttr 'disabled'
+
+    socket.on 'irReady', () ->
+        $('.proximity').removeAttr 'disabled'

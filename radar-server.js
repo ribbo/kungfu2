@@ -3,7 +3,23 @@ var app = require('http').createServer(),
     five = require('johnny-five'),
     port = 8888,
     deg = 10,
-    board, servo, ping;
+    ir = false,
+    isMoving = false,
+    irReady = false,
+    board, servo, ping, motion, motionTimer;
+
+    function stopServo () {
+            console.log('Stop servo');
+            servo.stop();
+            servo.to(0);
+            isMoving = false;
+    }
+
+    function motionInterval () {
+        motionTimer = setInterval(function () {
+            stopServo();
+        }, 5000);
+     }
 
 // Johnny-Five board instance
 board = new five.Board();
@@ -23,15 +39,34 @@ board.on('ready', function() {
     // Ping
     ping = new five.Ping(7);
 
-    // Inject the `servo` hardware into
+    // IR motion
+    motion = new five.IR.Motion(4);
+
+    // Inject the `servo and motion` hardware into
     // the Repl instance's context;
     // allows direct command line access
     board.repl.inject({
-        servo: servo
+        servo: servo,
+        motion: motion
+    });
+
+    // IR calibration
+    motion.on('calibrated', function (err, ts) {
+
+        console.log('IR Motion Calibrated');
+
+        irReady = true;
+
     });
 
     // On socket connection
     io.sockets.on('connection', function (socket) {
+
+        if (irReady) {
+            socket.emit('irReady');
+        } else {
+            console.log('IR motion was not calibrated');
+        }
 
         // On socket key 'sweep'
         socket.on('sweep', function (obj) {
@@ -40,10 +75,12 @@ board.on('ready', function() {
                 case 'start':
                     // Start sweeping
                     servo.sweep();
+                    isMoving = true;
                 break;
                 case 'stop':
                     // Stop servo
                     servo.stop();
+                    isMoving = false;
                 break;
             }
 
@@ -73,6 +110,14 @@ board.on('ready', function() {
 
         });
 
+        // On socket key 'ir'
+        socket.on('ir', function (bool) {
+            ir = bool;
+            if (!ir) {
+                stopServo();
+            }
+        });
+
         // Ping))) data
         ping.on('data', function (err, value) {
             // Emit radar data
@@ -81,6 +126,35 @@ board.on('ready', function() {
                 distance: this.cm
             });
 
+        });
+
+
+
+
+        // Movement started
+        motion.on('motionstart', function (err, ts) {
+
+            console.log('Motion Detected');
+
+            clearInterval(motionTimer);
+
+            if (ir && !isMoving) {
+
+                console.log('Scanning');
+
+                servo.sweep();
+                isMoving = true;
+            }
+        });
+
+        // Movement ended
+        motion.on('motionend', function (err, ts) {
+            if (ir && isMoving) {
+                motionInterval();
+
+                console.log('Motion stopped');
+
+            }
         });
 
     });
